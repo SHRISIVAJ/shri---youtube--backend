@@ -7,3 +7,4 @@ g4f
 scikit-learn
 pandas
 xgboost
+curl_cffi
