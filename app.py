@@ -1,4 +1,3 @@
-# app.py
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS  # Import CORS
 import moviepy.editor as mp
@@ -124,5 +123,7 @@ def analyze_video():
         "hashtags": hashtags  # Hashtags in the required space-separated format
     })
 
+# Ensure that the app binds to 0.0.0.0 and the correct port
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port)
