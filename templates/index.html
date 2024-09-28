@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>Video Analysis</title>
+</head>
+<body>
+    <div class="container">
+        <h1>Video Analysis Tool</h1>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <div class="upload-section">
+                <label for="videoFile" class="upload-label">Upload your video:</label>
+                <input type="file" id="videoFile" name="videoFile" accept="video/*" required>
+            </div>
+            <button type="submit" class="btn upload-btn">Analyze Video</button>
+        </form>
+        
+        <div id="processing" class="result-section hidden">
+            <h2>Processing your video...</h2>
+        </div>
+
+        <div id="result" class="result-section hidden">
+            <h2>Analysis Results</h2>
+            <div id="textSection" class="result-item"><strong>Extracted Text:</strong> <span class="output-content"></span></div>
+            <div id="keywordsSection" class="result-item"><strong>Keywords:</strong> <span class="output-content"></span></div>
+            <div id="titlesSection" class="result-item"><strong>Title Suggestions:</strong> <ol class="output-content"></ol></div>
+            <div id="descriptionSection" class="result-item"><strong>Video Description:</strong> <span class="output-content"></span></div>
+            <div id="tagsSection" class="result-item"><strong>Tags:</strong> <ul class="output-content"></ul></div>
+            <div id="hashtagsSection" class="result-item"><strong>Hashtags:</strong> <span class="output-content"></span></div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
