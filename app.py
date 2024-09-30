@@ -1,5 +1,4 @@
-from flask import Flask, request, jsonify, render_template
-from flask_cors import CORS  # Import CORS
+import streamlit as st
 import moviepy.editor as mp
 import speech_recognition as sr
 import nltk
@@ -8,17 +7,16 @@ import os
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
 
-# Initialize Flask app
-app = Flask(__name__)
-CORS(app)  # Enable CORS for the  entire application
-
-# Set up upload folder
-app.config['UPLOAD_FOLDER'] = 'uploads'
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-
 # Ensure NLTK data is downloaded
 nltk.download('punkt')
 nltk.download('stopwords')
+
+# Set up directories
+UPLOAD_FOLDER = 'uploads'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# Streamlit application title
+st.title("Video Analysis and Content Generation")
 
 # Function to convert video to audio
 def video_to_audio(video_file, audio_file='audio.wav'):
@@ -27,10 +25,10 @@ def video_to_audio(video_file, audio_file='audio.wav'):
         video.audio.write_audiofile(audio_file)
         return audio_file
     except Exception as e:
-        print(f"Error converting video to audio: {str(e)}")
+        st.error(f"Error converting video to audio: {str(e)}")
         raise RuntimeError("Failed to convert video to audio")
 
-# Function to convert audio to text using a Speech-to-Text API
+# Function to convert audio to text using Speech-to-Text API
 def audio_to_text(audio_file):
     recognizer = sr.Recognizer()
     try:
@@ -67,15 +65,15 @@ def extract_keywords(text, num_keywords=10):
 
         return keywords
     except Exception as e:
-        print(f"Error extracting keywords: {str(e)}")
+        st.error(f"Error extracting keywords: {str(e)}")
         raise RuntimeError("Failed to extract keywords")
 
 # Function to generate advanced content using g4f
 def generate_advanced_content_g4f(text, keywords):
     try:
-        prompt_titles = f"Generate 5 unique and catchy video titles based on these keywords: {', '.join(keywords)}. The titles should be concise and relevant to this text: '{text}' without any unnecessary numbering."
-        prompt_description = f"Write a detailed and engaging video description based on the following extracted text: '{text}'. Include the main topics like {', '.join(keywords)}."
-        prompt_tags = f"Generate a list of 15 tags relevant to the following keywords: {', '.join(keywords)} and the text: '{text}'. These tags should be SEO-friendly and capture the essence of the content without unnecessary numbering."
+        prompt_titles = f"Generate 5 unique and catchy video titles based on these keywords: {', '.join(keywords)}."
+        prompt_description = f"Write a detailed and engaging video description based on the following text: '{text}'."
+        prompt_tags = f"Generate a list of 15 tags relevant to the following keywords: {', '.join(keywords)}."
 
         # Create the messages list required by g4f
         messages_titles = [{"role": "user", "content": prompt_titles}]
@@ -93,64 +91,61 @@ def generate_advanced_content_g4f(text, keywords):
 
         return title_suggestions, detailed_description, tags_list
     except Exception as e:
-        print(f"Error generating content: {str(e)}")
+        st.error(f"Error generating content: {str(e)}")
         raise RuntimeError("Failed to generate advanced content")
 
 # Function to generate hashtags
 def generate_hashtags(tags):
-    hashtags = ["#" + tag.replace(" ", "") for tag in tags]
-    return " ".join(hashtags)
+    return " ".join(["#" + tag.replace(" ", "") for tag in tags])
 
-# Main route for rendering the homepage
-@app.route('/')
-def index():
-    return render_template('index.html')
+# Upload video file using Streamlit
+uploaded_file = st.file_uploader("Upload your video file", type=["mp4", "mov", "avi"])
 
-# Route for analyzing the video
-@app.route('/analyze-video', methods=['POST'])
-def analyze_video():
-    if 'videoFile' not in request.files:
-        return jsonify({"error": "No video file uploaded"}), 400
+# Main video processing workflow
+if uploaded_file is not None:
+    video_path = os.path.join(UPLOAD_FOLDER, uploaded_file.name)
     
-    video_file = request.files['videoFile']
-    video_path = os.path.join(app.config['UPLOAD_FOLDER'], video_file.filename)
+    with open(video_path, "wb") as f:
+        f.write(uploaded_file.getbuffer())
     
-    try:
-        video_file.save(video_path)
-        
-        # Process the video to extract audio and transcribe text
-        audio_path = video_to_audio(video_path)
-        extracted_text = audio_to_text(audio_path)
-        
-        # Extract keywords and generate content using g4f
-        keywords = extract_keywords(extracted_text)
-        title_suggestions, detailed_description, tags_list = generate_advanced_content_g4f(extracted_text, keywords)
-        
-        # Generate hashtags in the required format
-        hashtags = generate_hashtags(tags_list)
-        
-        # Format the tags list for line-by-line display with numbers
-        formatted_tags_list = "\n".join([f"{idx + 1}. {tag}" for idx, tag in enumerate(tags_list)])
-        
-        return jsonify({
-            "extractedText": extracted_text,
-            "keywords": keywords,
-            "titleSuggestions": title_suggestions,
-            "videoDescription": detailed_description,
-            "tags": formatted_tags_list,
-            "hashtags": hashtags
-        })
-    except Exception as e:
-        print(f"Error processing video: {str(e)}")
-        return jsonify({"error": f"Error processing video: {str(e)}"}), 500
-    finally:
-        # Clean up the temporary files
-        if os.path.exists(video_path):
-            os.remove(video_path)
-        if os.path.exists(audio_path):
-            os.remove(audio_path)
+    st.info("Video uploaded successfully.")
+    
+    with st.spinner("Processing your video..."):
+        try:
+            # Convert video to audio
+            audio_path = video_to_audio(video_path)
+            st.success("Audio extracted successfully.")
 
-# Ensure that the app binds to 0.0.0.0 and the correct port
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 8080))
-    app.run(host='0.0.0.0', port=port)
+            # Convert audio to text
+            extracted_text = audio_to_text(audio_path)
+            st.success("Text transcribed successfully.")
+            st.text_area("Transcribed Text", extracted_text, height=200)
+
+            # Extract keywords and generate content
+            keywords = extract_keywords(extracted_text)
+            title_suggestions, detailed_description, tags_list = generate_advanced_content_g4f(extracted_text, keywords)
+            
+            # Display results
+            st.subheader("Generated Content")
+            st.write("**Video Titles:**")
+            for i, title in enumerate(title_suggestions, 1):
+                st.write(f"{i}. {title}")
+
+            st.write("**Video Description:**")
+            st.text_area("Description", detailed_description, height=150)
+
+            st.write("**Tags:**")
+            st.text_area("Tags", "\n".join(tags_list), height=100)
+
+            st.write("**Hashtags:**")
+            hashtags = generate_hashtags(tags_list)
+            st.text_area("Hashtags", hashtags, height=50)
+            
+        except Exception as e:
+            st.error(f"Error processing video: {str(e)}")
+        finally:
+            # Clean up temporary files
+            if os.path.exists(video_path):
+                os.remove(video_path)
+            if os.path.exists(audio_path):
+                os.remove(audio_path)
