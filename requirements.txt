@@ -1,11 +1,10 @@
-streamlit
+Flask
+flask-cors
 moviepy
-speechrecognition
+SpeechRecognition
 nltk
-scikit-learn
 g4f
+scikit-learn
 pandas
-requests
-numpy
-tqdm
-PyDub  
+xgboost
+curl_cffi
