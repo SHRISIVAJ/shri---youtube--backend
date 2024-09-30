@@ -21,15 +21,19 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 # Streamlit application title
 st.title("Video Analysis and Content Generation")
 
-# Function to convert video to audio
 def video_to_audio(video_file, audio_file='audio.wav'):
     try:
         video = mp.VideoFileClip(video_file)
+        
+        if video.audio is None:
+            raise RuntimeError("No audio track found in the video.")
+
         video.audio.write_audiofile(audio_file)
         return audio_file
     except Exception as e:
         st.error(f"Error converting video to audio: {str(e)}")
         raise RuntimeError("Failed to convert video to audio")
+
 
 # Function to convert audio to text using Speech-to-Text API
 def audio_to_text(audio_file):
