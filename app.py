@@ -10,7 +10,7 @@ from sklearn.cluster import KMeans
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app)  # Enable CORS for the entire application
+CORS(app)  # Enable CORS for the  entire application
 
 # Set up upload folder
 app.config['UPLOAD_FOLDER'] = 'uploads'
