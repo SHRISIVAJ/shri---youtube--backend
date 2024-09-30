@@ -7,9 +7,12 @@ import os
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
 
-# Ensure NLTK data is downloaded
-nltk.download('punkt')
-nltk.download('stopwords')
+# Ensure NLTK data is downloaded and specify the path
+nltk_data_path = os.path.join(os.getcwd(), "nltk_data")
+os.makedirs(nltk_data_path, exist_ok=True)
+nltk.data.path.append(nltk_data_path)
+nltk.download('punkt', download_dir=nltk_data_path)
+nltk.download('stopwords', download_dir=nltk_data_path)
 
 # Set up directories
 UPLOAD_FOLDER = 'uploads'
@@ -50,7 +53,6 @@ def extract_keywords(text, num_keywords=10):
         vectorizer = TfidfVectorizer(stop_words='english', max_df=0.85)
         X = vectorizer.fit_transform(words)
 
-        # Using KMeans clustering to identify important terms
         num_clusters = 1
         kmeans = KMeans(n_clusters=num_clusters)
         kmeans.fit(X)
